@@ -1,0 +1,24 @@
+{
+  "name": "redis-wrapper",
+  "version": "0.0.1",
+  "description": "A simple redis wrapper using ioredis",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/akshendra/redis-wrapper.git"
+  },
+  "keywords": [
+    "redis",
+    "meta",
+    "js"
+  ],
+  "author": "Akshendra Pratap Singh",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/akshendra/redis-wrapper/issues"
+  },
+  "homepage": "https://github.com/akshendra/redis-wrapper#readme"
+}
