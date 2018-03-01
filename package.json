@@ -1,6 +1,6 @@
 {
-  "name": "redis-wrapper",
-  "version": "0.0.1",
+  "name": "@akshendra/redis",
+  "version": "0.0.2",
   "description": "A simple redis wrapper using ioredis",
   "main": "index.js",
   "scripts": {
