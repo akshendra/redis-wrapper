@@ -1,8 +1,8 @@
 
 const IoRedis = require('ioredis');
-const { is } = require('misc');
-const Service = require('service-base');
-const { validate, joi } = require('validator');
+const { is } = require('@akshendra/misc');
+const Service = require('@akshendra/service');
+const { validate, joi } = require('@akshendra/validator');
 
 /**
  * @class Redis
