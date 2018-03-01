@@ -20,5 +20,11 @@
   "bugs": {
     "url": "https://github.com/akshendra/redis-wrapper/issues"
   },
-  "homepage": "https://github.com/akshendra/redis-wrapper#readme"
+  "homepage": "https://github.com/akshendra/redis-wrapper#readme",
+  "dependencies": {
+    "ioredis": "^3.2.2",
+    "misc": "github:akshendra/utils",
+    "service-base": "github:akshendra/service-base",
+    "validator": "github:akshendra/validator"
+  }
 }
