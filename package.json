@@ -23,8 +23,8 @@
   "homepage": "https://github.com/akshendra/redis-wrapper#readme",
   "dependencies": {
     "ioredis": "^3.2.2",
-    "misc": "github:akshendra/utils",
-    "service-base": "github:akshendra/service-base",
-    "validator": "github:akshendra/validator"
+    "misc": "github:akshendra/utils#v0.0.1",
+    "service-base": "github:akshendra/service-base#v0.0.1",
+    "validator": "github:akshendra/validator#v0.0.1"
   }
 }
