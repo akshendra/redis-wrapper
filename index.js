@@ -1,45 +1,53 @@
 
 const IoRedis = require('ioredis');
-const { is } = require('@akshendra/misc');
-const Service = require('@akshendra/service');
-const { validate, joi } = require('@akshendra/validator');
 
 /**
  * @class Redis
  */
-class Redis extends Service {
+class Redis {
   /**
    * @param {string} name - unique name to this service
    * @param {EventEmitter} emitter
    * @param {Object} config - configuration object of service
    */
   constructor(name, emitter, config) {
-    super(name, emitter);
-
-    // validate and set defaults for config
-    this.config = validate(config, joi.object().keys({
-      host: joi.string().default('127.0.0.1'),
-      port: joi.number().integer().min(0).default(6379),
-      db: joi.number().integer().min(0).default(0),
-      auth: joi.object().keys({
-        use: joi.bool().default(false),
-        password: joi.string().default(''),
-      }).default({
+    this.name = name;
+    this.emitter = emitter;
+    this.config = Object.assign({
+      host: 'localhost',
+      port: 6379,
+      db: 0,
+    }, config, {
+      auth: Object.assign({
         use: false,
-      }),
-      cluster: joi.object().keys({
-        use: joi.bool().default(false),
-        hosts: joi.array().items(joi.object().keys({
-          host: joi.string().default('127.0.0.1'),
-          port: joi.number().integer().min(0).default(6379),
-          db: joi.number().integer().min(0).default(0),
-          password: joi.string().allow(null).default(null),
-        })),
-      }).default({
+      }, config.auth),
+      cluster: Object.assign({
         use: false,
-      }),
-    }));
+      }, config.cluster),
+    });
     this.client = null;
+  }
+
+  log(message, data) {
+    this.emitter.emit('log', {
+      service: this.name,
+      message,
+      data,
+    });
+  }
+
+  success(message, data) {
+    this.emitter.emit('success', {
+      service: this.name, message, data,
+    });
+  }
+
+  error(err, data) {
+    this.emitter.emit('error', {
+      service: this.name,
+      data,
+      err,
+    });
   }
 
 
@@ -50,7 +58,7 @@ class Redis extends Service {
    *  rejects when can not connect after retires
    */
   init() {
-    if (is.not.null(this.client)) {
+    if (this.client) {
       return Promise.resolve(this);
     }
 
@@ -67,7 +75,6 @@ class Redis extends Service {
           mode: 'CLUSTER',
           hosts: cluster.hosts,
         });
-        this.log.info('Redis -> connecting to CLUSTER', cluster.hosts);
         const clusterOptions = {
           clusterRetryStrategy(times) {
             if (times > 10) {
@@ -93,20 +100,19 @@ class Redis extends Service {
 
         // cluster specific events
         client.on('node error', (err) => {
-          this.log.error('node error', err);
-          this.emitError('node error', err, {});
+          this.error(err, {
+            type: 'node error',
+          });
         });
         client.on('+node', (node) => {
           const message = `node added ${node.options.key}`;
-          this.log.info(message);
-          this.emitInfo('node added', message, {
+          this.log(message, {
             key: node.options.key,
           });
         });
         client.on('-node', (node) => {
           const error = new Error(`node removed ${node.options.key}`);
-          this.log.error(error);
-          this.emitError('node removed', error, {
+          this.error(error, {
             key: node.options.key,
           });
         });
@@ -129,12 +135,10 @@ class Redis extends Service {
               reject();
               return 'Retried 10 times';
             }
-            this.log.info('Reconnecting to', host);
             const delay = Math.min(times * 200, 2000);
             return delay;
           },
           reconnectOnError: () => {
-            this.log.info('Reconnecting cause of error to', host);
             return true;
           },
         };
@@ -149,38 +153,32 @@ class Redis extends Service {
           });
         }
 
-        this.log.info('Connecting to URL', options);
         client = new IoRedis(options);
         // single node finish
       }
 
-      this.emitInfo('connecting', `Connecting in ${infoObj.mode} mode`, infoObj);
+      this.log(`Connecting in ${infoObj.mode} mode`, infoObj);
 
       // common events
       client.on('connect', () => {
-        this.log.info('Connected');
-        this.emitSuccess(`Successfully connected in ${infoObj.mode} mode`);
+        this.success(`Successfully connected in ${infoObj.mode} mode`);
       });
       client.on('error', (err) => {
-        this.log.error('error', err);
-        this.emitError('client', err, {});
+        this.error(err, {});
       });
       client.on('ready', () => {
-        this.log.info('Ready');
         this.client = client;
         resolve(this);
       });
       client.on('close', () => {
         const error = new Error('Redis connection closed');
-        this.log.error('Closed');
-        this.emitError('client', error);
+        this.error(error);
       });
       client.on('reconnecting', () => {
-        this.log.info('reconnecting');
-        this.emitInfo('reconnecting', `Reconnecting in ${infoObj.mode} mode`, infoObj);
+        this.log(`Reconnecting in ${infoObj.mode} mode`, infoObj);
       });
       client.on('end', () => {
-        this.log.error('Ended');
+        this.error(new Error('Connection ended'));
       });
     });
   }
