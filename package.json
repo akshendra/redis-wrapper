@@ -1,6 +1,6 @@
 {
   "name": "@akshendra/redis",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "A simple redis wrapper using ioredis",
   "main": "index.js",
   "scripts": {
@@ -22,9 +22,7 @@
   },
   "homepage": "https://github.com/akshendra/redis-wrapper#readme",
   "dependencies": {
-    "@akshendra/misc": "github:akshendra/utils#0.0.2",
-    "@akshendra/service": "github:akshendra/service-base#0.0.2",
-    "@akshendra/validator": "github:akshendra/validator#0.0.2",
-    "ioredis": "^3.2.2"
+    "ioredis": "^3.2.2",
+    "is_js": "^0.9.0"
   }
 }
