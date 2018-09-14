@@ -1,5 +1,6 @@
 
 const IoRedis = require('ioredis');
+const is = require('is_js');
 
 /**
  * @class Redis
