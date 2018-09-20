@@ -190,7 +190,7 @@ class Redis {
    */
   parse(result) { // eslint-disable-line
     result.forEach((res) => {
-      if (is.existy(res[0])) {
+      if (res[0]) {
         throw new Error(res[0], 'redis.multi', null);
       }
     });
