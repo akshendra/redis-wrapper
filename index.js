@@ -24,6 +24,9 @@ class Redis {
       cluster: Object.assign({
         use: false,
       }, config.cluster),
+      sentinel: Object.assign({
+        use: false,
+      }, config.sentinel),
     });
     this.client = null;
   }
@@ -66,11 +69,10 @@ class Redis {
     return new Promise((resolve, reject) => {
       let client = null;
       const { config } = this;
-      const { host, port, db, cluster, auth } = config;
+      const { host, port, db, cluster, sentinel, auth } = config;
       const infoObj = {};
 
       if (cluster.use === true) {
-        // if we have to user cluster
         Object.assign(infoObj, {
           mode: 'CLUSTER',
           hosts: cluster.hosts,
@@ -78,7 +80,7 @@ class Redis {
         const clusterOptions = {
           clusterRetryStrategy(times) {
             if (times > 10) {
-              reject();
+              reject(new Error('Retried 10 times'));
               return 'Retried 10 times';
             }
             const delay = Math.min(times * 200, 2000);
@@ -118,6 +120,42 @@ class Redis {
         });
 
         // cluster finish
+      } else if (sentinel.use === true) {
+        // sentinel mode
+        const { hosts, name } = sentinel;
+        Object.assign(infoObj, {
+          mode: 'SENTINEL',
+          hosts,
+          name,
+        });
+        const options = {
+          sentinels: hosts,
+          name,
+          db,
+          retryStrategy: (times) => {
+            if (times > 10) {
+              reject();
+              return 'Retried 10 times';
+            }
+            const delay = Math.min(times * 200, 2000);
+            return delay;
+          },
+          reconnectOnError: () => {
+            return true;
+          },
+        };
+        if (auth.use === true) {
+          Object.assign(infoObj, {
+            authentication: 'TRUE',
+          });
+          options.password = auth.password;
+        } else {
+          Object.assign(infoObj, {
+            authentication: 'FALSE',
+          });
+        }
+
+        client = new IoRedis(options);
       } else {
         // single node
         Object.assign(infoObj, {
@@ -190,7 +228,7 @@ class Redis {
    */
   parse(result) { // eslint-disable-line
     result.forEach((res) => {
-      if (is.existy(res[0])) {
+      if (res[0]) {
         throw new Error(res[0], 'redis.multi', null);
       }
     });

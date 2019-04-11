@@ -23,5 +23,9 @@
   "homepage": "https://github.com/akshendra/redis-wrapper#readme",
   "dependencies": {
     "ioredis": "^3.2.2"
+  },
+  "devDependencies": {
+    "eslint": "^5.9.0",
+    "eslint-plugin-import": "^2.14.0"
   }
 }
