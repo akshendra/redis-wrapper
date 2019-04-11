@@ -1,6 +1,29 @@
 
 const IoRedis = require('ioredis');
 
+
+function retryStrategy(times) {
+  if (times > 1000) {
+    return 'Retried 10 times';
+  }
+  const delay = Math.min(times * 100, 2000);
+  return delay;
+}
+
+
+function addAuth(auth, options, info) {
+  if (auth.use === true) {
+    Object.assign(info, {
+      authentication: 'TRUE',
+    });
+    options.password = auth.password;
+  } else {
+    Object.assign(info, {
+      authentication: 'FALSE',
+    });
+  }
+}
+
 /**
  * @class Redis
  */
@@ -78,26 +101,10 @@ class Redis {
           hosts: cluster.hosts,
         });
         const clusterOptions = {
-          clusterRetryStrategy(times) {
-            if (times > 10) {
-              reject(new Error('Retried 10 times'));
-              return 'Retried 10 times';
-            }
-            const delay = Math.min(times * 200, 2000);
-            return delay;
-          },
+          clusterRetryStrategy: retryStrategy,
         };
 
-        if (auth.use === true) {
-          Object.assign(infoObj, {
-            authentication: 'TRUE',
-          });
-          clusterOptions.password = auth.password;
-        } else {
-          Object.assign(infoObj, {
-            authentication: 'FALSE',
-          });
-        }
+        addAuth(auth, clusterOptions, infoObj);
         client = new IoRedis.Cluster(config.cluster.hosts, clusterOptions);
 
         // cluster specific events
@@ -132,29 +139,12 @@ class Redis {
           sentinels: hosts,
           name,
           db,
-          retryStrategy: (times) => {
-            if (times > 10) {
-              reject();
-              return 'Retried 10 times';
-            }
-            const delay = Math.min(times * 200, 2000);
-            return delay;
-          },
+          retryStrategy,
           reconnectOnError: () => {
             return true;
           },
         };
-        if (auth.use === true) {
-          Object.assign(infoObj, {
-            authentication: 'TRUE',
-          });
-          options.password = auth.password;
-        } else {
-          Object.assign(infoObj, {
-            authentication: 'FALSE',
-          });
-        }
-
+        addAuth(auth, options, infoObj);
         client = new IoRedis(options);
       } else {
         // single node
@@ -168,29 +158,12 @@ class Redis {
           port,
           host,
           db,
-          retryStrategy: (times) => {
-            if (times > 10) {
-              reject();
-              return 'Retried 10 times';
-            }
-            const delay = Math.min(times * 200, 2000);
-            return delay;
-          },
+          retryStrategy,
           reconnectOnError: () => {
             return true;
           },
         };
-        if (auth.use === true) {
-          Object.assign(infoObj, {
-            authentication: 'TRUE',
-          });
-          options.password = auth.password;
-        } else {
-          Object.assign(infoObj, {
-            authentication: 'FALSE',
-          });
-        }
-
+        addAuth(auth, options, infoObj);
         client = new IoRedis(options);
         // single node finish
       }
@@ -212,8 +185,8 @@ class Redis {
         const error = new Error('Redis connection closed');
         this.error(error);
       });
-      client.on('reconnecting', () => {
-        this.log(`Reconnecting in ${infoObj.mode} mode`, infoObj);
+      client.on('reconnecting', (time) => {
+        this.log(`Reconnecting in ${infoObj.mode} mode after ${time} ms`, infoObj);
       });
       client.on('end', () => {
         this.error(new Error('Connection ended'));
