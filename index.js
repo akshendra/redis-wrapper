@@ -207,6 +207,20 @@ class Redis {
     });
     return result.map(res => res[1]);
   }
+
+  ppl(arr) {
+    const batch = this.client.pipeline();
+    arr.forEach(val => {
+      batch[val.command](...val.args);
+    });
+    return batch.exec().then(response => {
+      const result = this.parse(response);
+      return result.map((res, index) => {
+        const action = arr[index].action || (x => x);
+        return action(res);
+      });
+    });
+  }
 }
 
 module.exports = Redis;
